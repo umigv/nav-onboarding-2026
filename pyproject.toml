@@ -1,0 +1,149 @@
+[tool.pixi.workspace]
+name = "nav-onboarding-2026"
+channels = ["https://prefix.dev/robostack-lyrical", "https://prefix.dev/conda-forge"]
+platforms = ["linux-64", "linux-aarch64", "osx-arm64"]
+
+[tool.pixi.feature.ros.dependencies]
+# Build toolchain
+ccache = "*"
+colcon-common-extensions = "*"
+pkg-config = "*"
+compilers = "*"
+ninja = "*"
+python = "3.14*"
+
+# Workspace dependencies
+matplotlib-base = "*"
+numpy = "*"
+# ROS 2 launch_testing's pytest plugin uses the pre-8.0 pytest_pycollect_makemodule(path, ...)
+# hook signature; pytest 8 removed the `path` arg, breaking pytest collection entirely.
+pytest = "<8"
+# setuptools 80 removed the `develop` command that colcon's ament_python editable installs rely on
+setuptools = "<80"
+ros-lyrical-joint-state-publisher = "*"
+ros-lyrical-joy = "*"
+ros-lyrical-robot-state-publisher = "*"
+ros-lyrical-ros-base = "*"
+ros-lyrical-rviz2 = "*"
+ros-lyrical-teleop-twist-joy = "*"
+ros-lyrical-urdf-launch = "*"
+ros-lyrical-xacro = "*"
+types-pyYAML = "*"
+
+[tool.pixi.feature.ros.activation]
+scripts = ["install/setup.bash"]
+
+[tool.pixi.feature.ros.activation.env]
+RCUTILS_COLORIZED_OUTPUT = "1"
+
+[tool.pixi.feature.ros.target.linux-64.activation.env]
+# OGRE's GLX renderer can't parent into a Wayland surface. Under WSLg (and native Wayland sessions), Qt6 defaults to
+# the wayland platform plugin since both sockets are present, which breaks rviz2's render window entirely. macOS has
+# no xcb plugin, so this is Linux-only.
+# Remove once rviz2 adopts OGRE's newer EGL/Wayland backend: https://github.com/ros2/rviz/issues/847
+# (engine-level support tracked at https://github.com/OGRECave/ogre/issues/2432).
+QT_QPA_PLATFORM = "xcb"
+# rviz2 moved to Qt6 in Lyrical, which enables high-DPI scaling by default. Even forced onto xcb above, we're still
+# composited through XWayland under WSLg, and a non-1.0 Qt scale factor there desyncs the OGRE viewport size from the
+# Qt widget size, causing flicker/tear. X11/macOS sessions without XWayland aren't affected, but there's no cheap way
+# to detect XWayland-vs-bare-X11 at activation time, so this stays Linux-only rather than global.
+# See https://github.com/ros2/rviz/issues/1079 and https://github.com/ros2/rviz/issues/1052.
+QT_ENABLE_HIGHDPI_SCALING = "0"
+
+[tool.pixi.feature.ros.target.linux-aarch64.activation.env]
+QT_QPA_PLATFORM = "xcb"
+QT_ENABLE_HIGHDPI_SCALING = "0"
+
+[tool.pixi.feature.tooling.dependencies]
+ruff = "*"
+mypy = "*"
+# Pin to version matching what Ubuntu ships with the ROS distro we use
+clang-format = "22.*"
+
+[tool.pixi.environments]
+default = { features = ["ros", "tooling"], solve-group = "default" }
+
+[tool.ruff]
+target-version = "py314"
+line-length = 120
+extend-exclude = [
+    "build",
+    "install",
+    "log",
+]
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "I",    # import sorting
+    "B",    # bugbear
+    "UP",   # pyupgrade
+    "SIM",  # simplify
+    "RUF",  # ruff rules
+    "A",    # builtins shadowing
+    "C4",   # comprehension optimizations
+    "PIE",  # misc correctness
+    "ISC",  # string concat issues
+    "PTH",  # use pathlib instead of os.path
+    "RET",  # return-statement hygiene
+    "FURB", # refurb - modernizations
+    "DTZ",  # timezone-aware datetimes
+    "ICN",  # import conventions (numpy as np, etc.)
+    "LOG",  # logging-call correctness
+    "N",    # pep8 naming
+    "D",    # pydocstyle (replaces ament_pep257)
+]
+ignore = [
+    "E501", # allow long lines that the formatter does not rewrite
+    "D1",   # don't require docstrings; only check formatting of the ones that exist
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"
+
+[tool.mypy]
+python_version = "3.14"
+
+# Output
+pretty = true
+show_error_codes = true
+
+# Strictness
+check_untyped_defs = true
+disallow_incomplete_defs = true
+disallow_untyped_defs = true
+warn_redundant_casts = true
+warn_return_any = true
+warn_unreachable = true
+warn_unused_ignores = true
+strict_equality = true
+extra_checks = true
+enable_error_code = [
+    "ignore-without-code", # require # type: ignore[code], not bare ignores
+    "redundant-expr",
+    "possibly-undefined",
+    "truthy-bool",
+]
+
+# Module discovery and import resolution
+namespace_packages = true
+explicit_package_bases = true
+ignore_missing_imports = false
+exclude = [
+    "(^|/)(build|install|log)/",
+    "(^|/)setup\\.py$",
+]
+
+[[tool.mypy.overrides]]
+# Dependencies that ship no type information (no py.typed marker, no stubs). Without this, mypy raises import-untyped
+# and fails; instead we accept Any from these modules. Keep alphabetical.
+module = [
+    "tf2_geometry_msgs.*",
+    "tf2_ros.*",
+]
+ignore_missing_imports = true
+disable_error_code = ["attr-defined"]

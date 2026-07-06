@@ -1,0 +1,27 @@
+from pathlib import Path
+
+from setuptools import find_packages, setup
+
+package_name = "bringup"
+share = Path("share") / package_name
+
+setup(
+    name=package_name,
+    version="0.1.0",
+    packages=find_packages(exclude=["test"]),
+    data_files=[
+        ("share/ament_index/resource_index/packages", ["resource/" + package_name]),
+        ("share/" + package_name, ["package.xml"]),
+        *[(str(share / path.parent), [str(path)]) for path in Path("launch").rglob("*") if path.is_file()],
+        *[(str(share / path.parent), [str(path)]) for path in Path("config").rglob("*") if path.is_file()],
+        *[(str(share / path.parent), [str(path)]) for path in Path("rviz").rglob("*") if path.is_file()],
+    ],
+    package_data={"": ["py.typed"]},
+    install_requires=["setuptools"],
+    zip_safe=True,
+    maintainer="Ryan Liao",
+    maintainer_email="ryanliao@umich.edu",
+    description="Launch files and shared configuration for the nav onboarding project",
+    license="Apache-2.0",
+    extras_require={"test": ["pytest"]},
+)

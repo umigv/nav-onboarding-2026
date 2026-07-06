@@ -1,0 +1,16 @@
+{
+    "recommendations": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "charliermarsh.ruff",
+        "editorconfig.editorconfig",
+        "tamasfe.even-better-toml",
+        "llvm-vs-code-extensions.vscode-clangd",
+        "redhat.vscode-yaml",
+        "redhat.vscode-xml",
+        "nefrob.vscode-just",
+        "smilerobotics.urdf",
+        "github.vscode-github-actions",
+        "twxs.cmake"
+    ]
+}

@@ -1,0 +1,41 @@
+# Vscode
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Python packaging
+*.egg-info/
+.eggs/
+PKG-INFO
+requirements.txt
+
+# Bytecode
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Tool caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Editable install artifacts
+pip-wheel-metadata/
+
+# Generated
+pyrightconfig.json
+
+# ROS2
+build/
+install/
+log/
+
+# just extract / just publish scratch files
+/*.yaml
+/*.yml
+!colcon_defaults.yaml
+
+# pixi environments
+.pixi/*
+!.pixi/config.toml

@@ -1,0 +1,2 @@
+base_frame: base_link
+odom_frame: odom

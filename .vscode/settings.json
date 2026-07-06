@@ -1,0 +1,34 @@
+{
+    "C_Cpp.intelliSenseEngine": "disabled",
+    "python.defaultInterpreterPath": "${workspaceFolder}/.pixi/envs/default/bin/python",
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.fixAll.ruff": "always",
+            "source.organizeImports.ruff": "always"
+        }
+    },
+    "[markdown]": {
+        "editor.wordWrap": "on",
+        "editor.rulers": []
+    },
+    "search.exclude": {
+        "**/build": true,
+        "**/install": true,
+        "**/log": true,
+        "**/__pycache__": true,
+        "**/.mypy_cache": true,
+        "**/.ruff_cache": true,
+        "**/.pytest_cache": true
+    },
+    "files.watcherExclude": {
+        "**/build/**": true,
+        "**/install/**": true,
+        "**/log/**": true,
+        "**/__pycache__/**": true,
+        "**/.mypy_cache/**": true,
+        "**/.ruff_cache/**": true,
+        "**/.pytest_cache/**": true
+    }
+}
