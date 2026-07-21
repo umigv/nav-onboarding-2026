@@ -41,6 +41,7 @@ If you scroll to the top of this Github page, you'll see a green button with the
 - Type 'git clone {the link you copied}' and hit enter.
 - Open the folder in VSCode or an IDE of your choosing.
 
+You'll also want to work on *your own branch.* To do this, run git  
 ## 4. Environment Setup
 
 ```
@@ -61,7 +62,7 @@ This creates a separate branch for your work to happen on without it appearing i
 
 ## 6. Creating a Package
 
-Packages basically all follow the same template of a bunch of "support/infrastructure" files, with the actual functionality you create only being located in the 'name.py' and 'name_config.py' files. Instead of creating all of that yourself it, run this scaffolding command:
+The different functions of Maverick are all stored in modules called packages. Packages basically all follow the same template of a bunch of "support/infrastructure" files, with the actual functionality you create only being located in the 'name.py' and 'name_config.py' files. Instead of creating all of that yourself it, run this scaffolding command:
 
 ```
 just create-pkg src/localization enc_odom_publisher
@@ -127,7 +128,12 @@ It's also good practice to make sure your node is protected from bad input. For 
 
 ## 10. Broadcasting TF
 
-Publish the `odom` → `base_link` transform alongside `Odometry`, using the same position/heading estimate:
+ROS's Transform, or TF2 (https://docs.ros.org/en/lyrical/Concepts/Intermediate/About-Tf2.html), library is used to translate between different frames of reference. 
+
+### What are Frames of Reference?
+Say you tell the robot to drive straight forward (+x). Next, you tell the robot to turn around 180 degrees, then drive forward again. If you drew this motion on a map, the robot has just driven out to a point (+x) and gone back to the start (-x), but from the robot's prespective, it only moved forward (+x), turned, and moved forward again. Frames of reference tell us how to get that motion on the world map from the robot's movements and rotations relative to it's current position and vice versa. In other words, frames of reference are used to track the difference between the origins and 0-degree angles of two planes or objects (In this case the world map and the robot).
+
+Paste in this code and fill in the 'transform=' correctly.
 
 ```python
 self.tf_broadcaster = TransformBroadcaster(self)
@@ -139,18 +145,24 @@ self.tf_broadcaster.sendTransform(TransformStamped(
 ))
 ```
 
-This isn't optional plumbing — RViz's RobotModel display and the Odometry display both need this transform to place anything relative to the fixed frame. Without it, the robot mesh stays frozen at the origin while `odom` reports it moving.
+In terms of how this code is actually used, RViz's RobotModel display and the Odometry display need it to move the robot model. Otherwise, the model stays at the origin even though `odom` tracks its actual motion.
 
 ## 11. The Reset Service
 
-Add a service (`std_srvs/Trigger` is sufficient) that zeroes your position/heading estimate back to `(0, 0, 0)`. Two things people commonly miss:
+Add a service (`std_srvs/Trigger` is sufficient) that zeroes your position/heading estimate back to `(0, 0, 0)`. This lets other ROS nodes request that the odometry node zero itself. 
 
-- Resetting state doesn't automatically publish anything — make sure the *next* TF broadcast reflects the reset immediately, not just the next scheduled timer tick, so downstream visualization doesn't briefly show a stale pose.
-- This is the easiest way to verify your integration math resets cleanly: reset, drive the square (§12), and confirm it starts from the same place every time.
+For this one, we aren't giving you the starter code — go look at the slides, or better yet, the ROS2 docs or the main Maverick repo, to see if you can figure it out for yourself.
+
+To test this, the easiest thing to do is to reset, drive the square (§13), and confirm it starts from the same place every time. It'll also make general testing easier.
+
+A common error to watch out for: Resetting state doesn't automatically publish anything, so you need to make sure the next *TF broadcast* reflects the reset immediately, not just the next scheduled timer tick, so downstream visualization doesn't briefly show a stale pose.
+
 
 ## 12. Adding Your Node to Launch Files
 
-Edit `src/bringup/launch/localization.launch.py` — it's an empty template with a commented-out example showing the expected shape (parameters loaded from `frames.yaml`, and the `enc_vel` → `enc_vel/raw` remap mentioned in §7):
+In order for all of our nice, simple, build and bringup commands to work, we need to set up some infrastructure first. This is honestly pretty boring, and they look basically the same for each package. Every package (§7) has its own launch.py file, which basically connects a package name with an executable file and the frames of reference it needs, and renames (remaps) any ROS topics it wants to use under a different name (In this case, the 'enc_vel' vs. 'enc_vel/raw' thing from (§8)). For example, the simulation package's `src/bringup/launch/simulation.launch.py` (already completed for you) starts `enc_vel_mock_publisher`.
+
+Here's the launch code for our node. Paste it into the launch.py file of your localization folder.
 
 ```python
 Node(
@@ -166,57 +178,61 @@ Node(
 ),
 ```
 
-`src/bringup/launch/simulation.launch.py` starts `enc_vel_mock_publisher` — you shouldn't need to touch it.
 
 ## 13. Running Against the Mock Publisher
 
-Like the rosbag flow below, this is three separate launches — `core.launch.py` and `localization.launch.py` bring up the robot description and your node, and `simulation.launch.py` starts the mock publisher feeding them:
+To run the simplified nav stack, you need to launch three separate packages. Launching `core.launch.py` brings up/starts the core robot functionality, `localization.launch.py` starts the node you just made, and `simulation.launch.py` starts the demo encoder simulation that publishes to the 'enc_vel/raw' topic:
 
 ```
+# in a first terminal:
 just build
 ros2 launch bringup core.launch.py
+# in a second terminal:
 ros2 launch bringup localization.launch.py
 # in a third terminal:
 ros2 launch bringup simulation.launch.py
 ```
 
-`enc_vel_mock_publisher` drives a repeating square with a small constant drift bias and noise (see its README for config). A correct node traces a mostly-closed square that's slightly offset by the time it comes back around — a perfectly closed loop with zero drift usually means the noise/bias isn't making it through your integration at all, which is itself worth double-checking.
+`enc_vel_mock_publisher` publishes the encoder data for a repeating square with a small constant drift bias and noise (see its README for config details). If your node traces a mostly complete square that goes back to roughly the starting point, it's probably working. The square won't be perfect because of the aforementioned noise.
 
 ## 14. Running Against the Rosbag
 
-`bags/` contains a recorded rosbag of a heart-shaped trajectory (driven via joystick teleop through the real sensor pipeline, so it carries realistic noise). Launch your node without the mock publisher, then play the bag in a second terminal:
+`bags/` contains a recorded rosbag of a heart-shaped trajectory (driven via joystick teleop through the real sensor pipeline, so it also has noise). Launch the robot stack like you did in (§13), but instead of launching the simulation package, use the following ROS command to replay the previously recorded ROS bag.
 
 ```
-ros2 launch bringup core.launch.py
-ros2 launch bringup localization.launch.py
-# in a second terminal:
 ros2 bag play bags/<heart-bag-name>
 ```
 
+Replaying ROS bags is a valuable tool for us, because it allows us to test our algorithms and visualization tools against known sets of input that either replay or closely replicate actual robot conditions. If we know that the ROS bag represents driving in a heart, and your node doesn't show that, we can tell it needs to be debugged or tuned.
+
 ## 15. Visualizing in RViz2
 
-We use RViz2 directly, launched manually (not baked into a launch file). Launch it plain, then load the saved config via **File → Open Config**, browsing to `src/bringup/rviz/onboarding.rviz` in the repo:
+RViz is a useful tool for quickly visualizing different positional data topics in Maverick's stack. Rather than echoing a topic and reading the output, RViz lets us see things like CV output, intended path, and for our purposes, odometry in a simulated space.
+We launch RViz2 directly rather than through a launch file: 
 
 ```
 rviz2
 ```
+If you have a certain set of topics you regularly want to look at togehter, you can save them as a custom configuration. For this project, use RViz's **File → Open Config** and select `src/bringup/rviz/onboarding.rviz` in the onboarding repo, which sets the fixed frame to `odom` and has RobotModel, TF, and Odometry displays already added.
 
-The provided config sets the fixed frame to `odom` and has RobotModel, TF, and Odometry displays already added.
 
 ## 16. Tooling: Formatting & Linting
+We also have some formatting commands to make sure your packages match our preferred format:
 
 ```
 just format   # auto-formats all source files
 just lint     # runs the same checks CI runs
 ```
 
-Run both before opening your PR — CI enforces them, and fixing lint failures after the fact is more annoying than running `just format` up front.
+*Run both before proceeding.* 
 
 ## 17. Opening Your PR
 
-Push your branch and open a PR against `main`. The PR template will ask for:
+Commit your changes, and push to and publish your branch. Open it in Github, and open a Pull Request against `main` to merge your changes. The PR template will ask for:
 
 - A screenshot of RViz showing a valid trajectory against the mock publisher (square)
 - A screenshot of RViz showing a valid trajectory against the rosbag (heart)
 
-CI must pass (build + test + lint) before your PR is considered complete.
+CI (Continuous Integration checks) must pass (build + test + lint) before your PR is considered complete.
+
+https://www.kern-it.be/en/definitions/pull-request/
