@@ -2,9 +2,15 @@
 
 Welcome to the navigation subteam! In this onboarding project, you'll learn the key concepts you need to know as a nav member with a simplified version of Maverick, our actual robot code monorepo*, with most of the same tools you'll use on real projects. In particular, you'll rebuild the odometry ROS node. While simple, encoder odometry is widely used in robotics to track position, so it's very helpful to know!
 
-**Please note** that you are expected to struggle with this project (not too much, we aren't sadists). ROS types in particular can be very confusing, as they nest and interact in confusing ways, especially as they relate to services, and a large part of the challenge of this project is figuring out all of the associated errors. Both Caitlyn and Hannah spent a while debugging their own solutions, so don't feel dumb. We want you to learn how to find examples and details about types from the ROS Docs other online sources, and don't be afraid to ask for help from the leads or each other. Just don't copy or use AI to write your code, you're doing yourself a disservice. Remember, your most important job here is to learn.
-
 *monorepo: a single storage repository for one large project (https://en.wikipedia.org/wiki/Monorepo)
+
+### Please note:
+
+You are expected to struggle with this project (not too much, we aren't sadists). ROS types in particular can be very confusing, as they nest and interact in confusing ways, especially as they relate to services, and a large part of the challenge of this project is figuring out all of the associated errors. Both Caitlyn and Hannah spent a while debugging their own solutions, so don't feel dumb. We want you to learn how to find examples and details about types from the ROS Docs other online sources, and don't be afraid to ask for help from the leads or each other. Just don't copy or use AI to write your code, you're doing yourself a disservice. Remember, your most important job here is to learn.
+
+### Slides for Reference:
+https://docs.google.com/presentation/d/1YotOXd3rLx2toDDOaaBbGKjUl41JcExxPfoqDW98pH8/edit?slide=id.g3f689144427_0_119#slide=id.g3f689144427_0_119
+
 ## 1. What is Odometry?
 
 Every mobile robot needs to know its location. Your job is to write to calculate odometry, or estimated position based on encoder data, for Maverick. Each motor has an encoder that tracks its rotation, and from this data, we can calculate Maverick's current velocity vector. These velocity data can be integrated over time to get an estimate of Maverick's current position. In order to take input from the motor encoders, calculate the odometry, and send it to the navigation algorithms, we use a ROS node.
@@ -42,7 +48,7 @@ If you scroll to the top of this Github page, you'll see a green button with the
 
 ### Terminal:
 - Navigate to a folder of your choosing.
-- Type 'git clone <the link you copied>' and hit enter.
+- Type 'git clone [the link you copied]' and hit enter.
 - Open the folder in VSCode or an IDE of your choice.
 
 ## 4. Environment Setup
@@ -61,14 +67,14 @@ Once you do this, you should notice that whenever you open a new terminal in you
 Open a terminal in VSCode or the terminal app in this project's folder. Paste and run the following command.
 
 ```
-git checkout -b <your-uniqname>/enc-odom-publisher
+git checkout -b [your-uniqname]/enc-odom-publisher
 ```
 
 This creates a separate branch for your work to happen on without it appearing in everyone else's work.
 
 ## 6. Creating a Package
 
-The different functions of Maverick are all stored in modules called packages. Packages basically all follow the same template of a bunch of "support/infrastructure" files, with the actual functionality you create only being located in the '<name>.py', '<name>_config.py', and often (but not here) '<name>_impl.py'* files. Instead of having to create all of that yourself, just run this command:
+The different functions of Maverick are all stored in modules called packages. Packages basically all follow the same template of a bunch of "support/infrastructure" files, with the actual functionality you create only being located in the '[name].py', '[name]_config.py', and often (but not here) '[name]_impl.py'* files. Instead of having to create all of that yourself, just run this command:
 
 ```
 just create-pkg src/localization enc_odom_publisher
@@ -76,14 +82,14 @@ just create-pkg src/localization enc_odom_publisher
 
 This copies `src/template/template_python` into `src/localization/enc_odom_publisher`, renaming everything to match your package name, and regenerates `pyrightconfig.json` so your editor recognizes the new package. Before writing any code yourself, take a minute to familiarize yourself with the premade format. Every package in this repo follows the same format.
 
-The format leaves several `TODO` placeholder comments. It's good to fill them anyway, since a PR reviewer will expect it:
+The format leaves several `TODO` placeholder comments. It's good to fill these anyway, since on real projects a PR reviewer will expect it:
 
-- `package.xml`'s `<description>` and `setup.py`'s `description=` (currently `"TODO: Package description"`)
+- `package.xml`'s `[description]` and `setup.py`'s `description=` (currently `"TODO: Package description"`)
 - `README.md`'s summary line and Subscribed/Published Topics tables
 - Your config dataclass's docstring `Attributes:` list (§8) — document each field as you add it, not at the end
 - Your information in setup.py and package.xml (so we know who made what)
 
-*'<name>_impl.py' is used by our more complicated nodes, like goal selection, that require a lot of functionality. This would be very unwieldy to create in the node itself, so we use an 'impl' for readability.
+*'[name]_impl.py' is used by our more complicated nodes, like goal selection, that require a lot of functionality. This would be very unwieldy to create in the node itself, so we use an 'impl' for readability.
 
 ## 7. Adding Your Node to Launch Files
 
@@ -105,12 +111,12 @@ Node(
 ),
 ```
 
-*Important tip before proceeding:*
+#### Important tip before proceeding:
 As you go, it's important to be checking your work. Now that the launch file has been created, you can follow the instructions in 
 step (§13 and §14) to build and run the stack, which will be essential for debugging. It's also often useful to temporarily add logging messages to trace errors:
 ```python 
 self.get_logger().info("useful info here ")
-self.get_logger().info(f"useful var here {<my_float_var>}")
+self.get_logger().info(f"useful var here {[my_float_var]}")
 ```
 Caitlyn's recommendation is to print the function or check that the logging call is in to make sure the node is correctly reaching all the functionality it needs during operation. Rather than printing the line number, print what needed to happen to reach that point in the code, because then you'll understand what isn't happening if that statement is never reached. It's also helpful to print variables to check that everything is being processed correctly; an example for printing a float is shown above.
 
@@ -140,8 +146,8 @@ self.config: EncOdomPublisherConfig = utils.config.load(self, EncOdomPublisherCo
 Your node needs to subscribe to the `enc_vel` topic, which is of type TwistWithCovarianceStamped, and publishes to the `odom` topic, which is of type Odometry. Use the format found there to add them to the init. 
 
 ```python
-self.create_subscription(<data_type>, "<topic name>", self.<callback_name>, 10)
-self.<publisher_name> = self.create_publisher(<data_type>, "<topic_name>", 10)
+self.create_subscription([data_type], "[topic name]", self.[callback_name], 10)
+self.[publisher_name] = self.create_publisher([data_type], "[topic_name]", 10)
 ```
 
 Note: If you were to run the Maverick stack and open RViz or use the echo list command to see all the active topics, you'd see both an `enc_vel` and `enc_vel/raw` topic. We want the node to use `enc_vel`, and here's why : say we discovered something wrong with our encoder velocity--maybe its data needs to be filtered. Normally, 'enc_vel/raw' publishes right to 'enc_vel', but by adding a filter between the topics, every node that needs velocity can get it without needing to change which topic it's subscribed to. In that case, if the odom node were subscribed to 'enc_vel/raw', it would be getting the unfiltered data. 
@@ -158,33 +164,33 @@ x += vx * dt * cos(mid_heading)
 y += vx * dt * sin(mid_heading)
 heading += wz * dt
 ```
-...and then publish the transformed output. However, there are some situations where we don't want to publish. For starters, drop the message (i.e. don't calculate or publish odometry updates) when the subscriber's received 'dt' is less than or equal to 0 or is longer than say, one second (as would happen if comms were lost). It's also good to check that each message's `frame_id` matches the `base_frame_id` from the config file. You also need to think back to the slides to decide when to publish your data. There are two main ways of doing this, one simpler to implement but less robust, and the other more complex but more like what we do on the main robot.
+...and then publish the transformed output. However, there are some situations where we don't want to publish. For starters, drop the message (i.e. don't calculate or publish odometry updates) when the subscriber's received 'dt' is less than or equal to 0 or is longer than say, one second (as would happen if comms were lost). It's also good practice to check that each message's `frame_id` matches the `base_frame_id` from the config file. You also need to think back to the slides to decide when to publish your data. There are two main ways of doing this, one simpler to implement but provides less robust communication, and the other more complicated but more like what we do on the main robot.
 
 *Why midpoint method?*
 By using the midpoint of the initial and final headings of each timestep in our calculations, we can get a more reliable estimate of the direction the robot moved over the last timestep, especially while turning. `utils.geometry`'s `Point2d`/`Rotation2d` can be used to convert rotation and positions without you needing to worry about the trigonometry, but it is importnt to understand the mechanics of odometry.
 
-*A note on ROS2 types:*
+#### A note on ROS2 types:
 As discussed briefly in the slides, ROS2 uses lots of custom message types. You'll be interacting with a couple of them in this step, including Twist and Time. The most complicated of these is the Odometry type. The template for it is below. For the rest of the message types, you are encouraged to look them up in the ROS2 documentation.
 ```python
             Odometry(
-                header=Header(<look this up!>),
+                header=Header([look this up!]),
                 child_frame_id=self.config.base_frame_id,
                 pose=PoseWithCovariance(
-                    pose=Pose(<look this up!>,),
+                    pose=Pose([look this up!],),
                     covariance=self.pose_covariance,
                 ),
-                twist=Twist(<look this up!>),
+                twist=Twist([look this up!]),
             )
 ```
-*Pose*
+##### Pose
 Rotations and positions are by default 3d in ROS. For convenience, you can use Rotation2d and Point2d types instead, but when you publish them, you'll need to use our .to_ros() helper function to covert them to 3d.
 
-*Time*
+##### Time
 You will need to look this one up. Two things to note: 
 1. Getting 'dt' is not be as simple as subtracting two 'Time' objects. You need to do some preprocessing of your own, which you will need to look up.
 2. What happens when you try to get 'dt' when there is no previous time?
 
-*Covariance*
+##### Covariance
 Don't worry too much about this. Covariance is basically a matrix used to represent uncertainty in a pose. For this purpose, our uncertainty is very small (but it must be nonzero), and we only need to set values for x and y axes and the z rotation, which are on the main diagonal of the matrix.
 
 ## 11. Broadcasting TF
@@ -208,7 +214,7 @@ self.tf_broadcaster.sendTransform(TransformStamped(
 
 In terms of how this code is actually used, RViz's RobotModel display and the Odometry display need it to move the robot model. Otherwise, the model stays at the origin even though `odom` tracks its actual motion.
 
-*Transform*
+#### Transform
 The Transform class takes types that don't necessarily match the types we use in the rest of the node. Make sure you give your input in the right format (it may help to declare these objects in the 'Transform()' declaration itself)
 
 ## 12. The Reset Service
@@ -272,7 +278,7 @@ We also have some formatting commands to make sure your packages match our prefe
 just format   # auto-formats all source files
 just lint     # runs the same checks CI (Continuous Integration) runs
 ```
-*Run both before proceeding.* 
+#### *Run both before proceeding.* 
 
 ## 17. Opening Your PR
 
@@ -284,8 +290,11 @@ Commit your changes, and push to and publish your branch. Open it in Github, and
 CI (Continuous Integration checks) must pass (build + test + lint) before your PR is considered complete.
 
 If it's approved, congratulations! You're done with onboarding. If not, see if you can find the error, and if you can't ask the leads.
+
 Whatever you do, **do not merge your pull request to main.** Keep main clean for everyone else!
+
 If you have any further questions about Git, ask the leads, your peers, or look it up yourself.
 
 https://www.kern-it.be/en/definitions/pull-request/
+
 https://docs.github.com/en/pull-requests/reference/pull-requests
