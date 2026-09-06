@@ -124,6 +124,8 @@ Caitlyn's recommendation is to print the function or check that the logging call
 
 Every node in this repo loads its tunable parameters through a pre-made class, not runtime declarations and access calls. This way, they can't be changed in runtime, and when we want to tune the parameters on a node/package, they're all organized in one place:
 
+Paste the following into the 'enc_odom_publisher_config.py' file:
+
 ```python
 @dataclass(frozen=True)
 class EncOdomPublisherConfig:
@@ -134,7 +136,9 @@ class EncOdomPublisherConfig:
         # raise ValueError on invalid combinations
         ...
 ```
-Add the frame_id assignments seen above to the config. The rest is already added.
+
+Paste the following into the init of 'enc_odom_publisher.py' file:
+
 ```python
 self.config: EncOdomPublisherConfig = utils.config.load(self, EncOdomPublisherConfig)
 ```
@@ -150,7 +154,7 @@ self.create_subscription([data_type], "[topic name]", self.[callback_name], 10)
 self.[publisher_name] = self.create_publisher([data_type], "[topic_name]", 10)
 ```
 
-Note: If you were to run the Maverick stack and open RViz or use the echo list command to see all the active topics, you'd see both an `enc_vel` and `enc_vel/raw` topic. We want the node to use `enc_vel`, and here's why : say we discovered something wrong with our encoder velocity--maybe its data needs to be filtered. Normally, 'enc_vel/raw' publishes right to 'enc_vel', but by adding a filter between the topics, every node that needs velocity can get it without needing to change which topic it's subscribed to. In that case, if the odom node were subscribed to 'enc_vel/raw', it would be getting the unfiltered data. 
+Note: If you were to run the Maverick stack and open RViz or use the echo list command to see all the active topics, you'd see both an `enc_vel` and `enc_vel/raw` topic. We want the node to use `enc_vel`, and here's why: say we discovered something wrong with our encoder velocity--maybe its data needs to be filtered. Normally, 'enc_vel/raw' publishes right to 'enc_vel', but by adding a filter between the topics, every node that needs velocity can get it without needing to change which topic it's subscribed to. In that case, if the odom node were subscribed to 'enc_vel/raw', it would be getting the unfiltered data. 
 For more review on publishers and subscribers, review the slides.
 
 ## 10. Odometry Calculations
