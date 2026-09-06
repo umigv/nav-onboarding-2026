@@ -1,19 +1,21 @@
-# Navigation Onboarding 2026
+# ROB 330 ROS Tutorial F26
 
-Welcome to the navigation subteam! In this onboarding project, you'll learn the key concepts you need to know as a nav member with a simplified version of Maverick, our actual robot code monorepo*, with most of the same tools you'll use on real projects. In particular, you'll rebuild the odometry ROS node. While simple, encoder odometry is widely used in robotics to track position, so it's very helpful to know!
+Hello! this is a simple ROS introduction project adapted from the Autonomous Robotic Vehcile Project Team (ARV)'s 2026 Onboarding project. It teaches key ROS2 concepts  with a simplified version of ARV's robot Maverick. Specifically, you'll be recreating its odometry ROS node. While simple, encoder odometry is widely used in robotics to track position, so it's very helpful to know!
 
-*monorepo: a single storage repository for one large project (https://en.wikipedia.org/wiki/Monorepo)
 
 ### Please note:
 
-You are expected to struggle with this project (not too much, we aren't sadists). ROS types in particular can be very confusing, as they nest and interact in confusing ways, especially as they relate to services, and a large part of the challenge of this project is figuring out all of the associated errors. Both Caitlyn and Hannah spent a while debugging their own solutions, so don't feel dumb. We want you to learn how to find examples and details about types from the ROS Docs other online sources, and don't be afraid to ask for help from the leads or each other. Just don't copy or use AI to write your code, you're doing yourself a disservice. Remember, your most important job here is to learn.
+You may struggle with this project. ROS types in particular can be very confusing, as they nest and interact in confusing ways, especially as they relate to services, and a large part of the challenge of this project is figuring out all of the associated errors, so don't feel dumb. Hopefully, you'll learn how to find examples and details about types from the ROS Docs other online sources, and don't be afraid to ask for help from the leads or each other. Just don't copy or use AI to write your code, you're doing yourself a disservice. Remember, your most important job here is to learn.
 
 ### Slides for Reference:
 https://docs.google.com/presentation/d/1YotOXd3rLx2toDDOaaBbGKjUl41JcExxPfoqDW98pH8/edit?slide=id.g3f689144427_0_119#slide=id.g3f689144427_0_119
 
+#### Brought to you by the Autonomous Robotic Vehicle Project Team. First Mass Meeting 9/6 4-6pm, Alternate Mass Meeting 9/13 4-6pm.
+As a note, ARV uses a slightly different ROS environment than this class, so there are some parts that won't apply. I've tried to note these.
+
 ## 1. What is Odometry?
 
-Every mobile robot needs to know its location. Your job is to write to calculate odometry, or estimated position based on encoder data, for Maverick. Each motor has an encoder that tracks its rotation, and from this data, we can calculate Maverick's current velocity vector. These velocity data can be integrated over time to get an estimate of Maverick's current position. In order to take input from the motor encoders, calculate the odometry, and send it to the navigation algorithms, we use a ROS node.
+Every mobile robot needs to know its location. Your job is to write to calculate odometry, or estimated position based on encoder data, for ARV's robot Maverick. Each motor has an encoder that tracks its rotation, and from this data, we can calculate Maverick's current velocity vector. These velocity data can be integrated over time to get an estimate of Maverick's current position. In order to take input from the motor encoders, calculate the odometry, and send it to the navigation algorithms, we use a ROS node.
 
 The odometry node must:
 - Subscribe to `enc_vel` (`geometry_msgs/TwistWithCovarianceStamped`)
@@ -38,9 +40,11 @@ bags/                 recorded rosbags used for validation (see §14)
 ```
 In general, these are the only parts of the repo you need to worry about (unless something is very very wrong, and if so it's probably not your fault). You'll add your odometry node as a package under `src/localization/` (which is where this node is located in Maverick's monorepo). You'll learn more about packages in a later step, but first you need to do some setup.
 
+### ROB 330 Note:
+This is how ARV's repo is set up. The mbot may be a little different, but it still shows how things are separated into packages.
 
 ## 3. Cloning the Repo
-If you scroll to the top of this Github page, you'll see a green button with the word "Code" on it. Click it, and under HTTPS, hit the copy symbol for the link shown. Then, open VSCode or your terminal.
+If you scroll to the top of this Github page, you'll see a green button with the word "Code" on it. Click it, and under HTTPS, hit the copy symbol for the link shown. Then, open VSCode or your terminal. You'll be making a ROS2 environment on your own computer for this project, but I don't know if you'll be able to reliably test mbot projects in this environment, so just use this environment for this project and test your mbot code on the mbot to be safe.
 
 ### VSCode:
 - Hit the "Clone Git Repository" button.
@@ -60,19 +64,12 @@ just setup    # installs pixi environment, shell completions
 just build    # builds the workspace once to confirm everything compiles
 ```
 
-If `just build` succeeds with no packages of your own yet, your environment has been set up successfully. If not, talk to Caitlyn or Hannah.
+If `just build` succeeds with no packages of your own yet, your environment has been set up successfully. If not, email ctrievel@umich.edu.
+
 Once you do this, you should notice that whenever you open a new terminal in your repo, it should switch to a pixi terminal after a couple seconds.
 
-## 5. Create Your Branch
-Open a terminal in VSCode or the terminal app in this project's folder. Paste and run the following command.
 
-```
-git checkout -b [your-uniqname]/enc-odom-publisher
-```
-
-This creates a separate branch for your work to happen on without it appearing in everyone else's work.
-
-## 6. Creating a Package
+## 5. Creating a Package
 
 The different functions of Maverick are all stored in modules called packages. Packages basically all follow the same template of a bunch of "support/infrastructure" files, with the actual functionality you create only being located in the '[name].py', '[name]_config.py', and often (but not here) '[name]_impl.py'* files. Instead of having to create all of that yourself, just run this command:
 
@@ -91,9 +88,12 @@ The format leaves several `TODO` placeholder comments. It's good to fill these a
 
 *'[name]_impl.py' is used by our more complicated nodes, like goal selection, that require a lot of functionality. This would be very unwieldy to create in the node itself, so we use an 'impl' for readability.
 
-## 7. Adding Your Node to Launch Files
+### ROB 330 Note:
+This step relied heavily on ARV's custom tooling. You won't be able to make packages this easily on the mbot, but hopefully you were able to make the package quickly and get a sense for the structure of packages anyway.
 
-In order for all of our nice, simple, build and bringup commands to work, we need to set up some infrastructure first. This is honestly pretty boring, and they look basically the same for each package. Every package (§6) has its own launch.py file, which basically connects a package name with an executable file and the frames of reference it needs, and renames (remaps) any ROS topics it wants to use under a different name (In this case, the 'enc_vel' vs. 'enc_vel/raw' thing from (§9)). For example, the simulation package's `src/bringup/launch/simulation.launch.py` (already completed for you) starts `enc_vel_mock_publisher`.
+## 6. Adding Your Node to Launch Files
+
+In order for all of ROS2 build and launch commands to work, we need to set up some infrastructure first. This is honestly pretty boring, and they look basically the same for each package. Every package (§6) has its own launch.py file, which basically connects a package name with an executable file and the frames of reference it needs, and renames (remaps) any ROS topics it wants to use under a different name (In this case, the 'enc_vel' vs. 'enc_vel/raw' thing from (§9)). For example, the simulation package's `src/bringup/launch/simulation.launch.py` (already completed for you) starts `enc_vel_mock_publisher`.
 
 Here's the launch code for our node. Paste it into the launch.py file that corresponds to the localization node.
 
@@ -118,11 +118,13 @@ step (§13 and §14) to build and run the stack, which will be essential for deb
 self.get_logger().info("useful info here ")
 self.get_logger().info(f"useful var here {[my_float_var]}")
 ```
-Caitlyn's recommendation is to print the function or check that the logging call is in to make sure the node is correctly reaching all the functionality it needs during operation. Rather than printing the line number, print what needed to happen to reach that point in the code, because then you'll understand what isn't happening if that statement is never reached. It's also helpful to print variables to check that everything is being processed correctly; an example for printing a float is shown above.
+My recommendation is to print the function or check that the logging call is in to make sure the node is correctly reaching all the functionality it needs during operation. Rather than printing the line number, print what needed to happen to reach that point in the code, because then you'll understand what isn't happening if that statement is never reached. It's also helpful to print variables to check that everything is being processed correctly; an example for printing a float is shown above.
 
-## 8. What is the Config File?
+## 7. What is the Config File?
 
-Every node in this repo loads its tunable parameters through a pre-made class, not runtime declarations and access calls. This way, they can't be changed in runtime, and when we want to tune the parameters on a node/package, they're all organized in one place:
+Every node in ARV's Maverick loads its tunable parameters through a pre-made class, not runtime declarations and access calls. This isn't strictly necessary for ROS2 programming, but it's generally good practice. It allows parameters to be stored externally from the functionality, protecting them from runtime changes and keeping them organized for tuning.
+
+Paste the following into the 'enc_odom_publisher_config.py' file:
 
 ```python
 @dataclass(frozen=True)
@@ -134,14 +136,16 @@ class EncOdomPublisherConfig:
         # raise ValueError on invalid combinations
         ...
 ```
-Add the frame_id assignments seen above to the config. The rest is already added.
+
+Paste the following into the init of 'enc_odom_publisher.py' file:
+
 ```python
 self.config: EncOdomPublisherConfig = utils.config.load(self, EncOdomPublisherConfig)
 ```
 
-`utils.config.load` declares a ROS 2 parameter for each field of the selected config file, reads any values passed in via the 'launch' command, and uses the config class's defaults otherwise. See `src/core/utils/utils/config.py` for the full mapping rules (nested dataclasses, lists, `Literal` types, etc.). You won't need it for onboarding, but it shows up in the actual repo.
+`utils.config.load` declares a ROS 2 parameter for each field of the selected config file, reads any values passed in via the 'launch' command, and uses the config class's defaults otherwise. 
 
-## 9. Publisher / Subscriber Basics
+## 8. Publisher / Subscriber Basics
 
 Your node needs to subscribe to the `enc_vel` topic, which is of type TwistWithCovarianceStamped, and publishes to the `odom` topic, which is of type Odometry. Use the format found there to add them to the init. 
 
@@ -150,10 +154,10 @@ self.create_subscription([data_type], "[topic name]", self.[callback_name], 10)
 self.[publisher_name] = self.create_publisher([data_type], "[topic_name]", 10)
 ```
 
-Note: If you were to run the Maverick stack and open RViz or use the echo list command to see all the active topics, you'd see both an `enc_vel` and `enc_vel/raw` topic. We want the node to use `enc_vel`, and here's why : say we discovered something wrong with our encoder velocity--maybe its data needs to be filtered. Normally, 'enc_vel/raw' publishes right to 'enc_vel', but by adding a filter between the topics, every node that needs velocity can get it without needing to change which topic it's subscribed to. In that case, if the odom node were subscribed to 'enc_vel/raw', it would be getting the unfiltered data. 
+Note: If you were to run ARV's Maverick and open RViz or use the echo list command to see all the active topics, you'd see both an `enc_vel` and `enc_vel/raw` topic. We want the node to use `enc_vel`, and here's why: say we discovered something wrong with our encoder velocity--maybe its data needs to be filtered. Normally, 'enc_vel/raw' publishes right to 'enc_vel', but by adding a filter between the topics, every node that needs velocity can get it without needing to change which topic it's subscribed to. In that case, if the odom node were subscribed to 'enc_vel/raw', it would be getting the unfiltered data. 
 For more review on publishers and subscribers, review the slides.
 
-## 10. Odometry Calculations
+## 9. Odometry Calculations
 
 The `enc_vel` subscription gives you linear velocity `vx` and angular velocity `wz` in the robot's frame of reference. We want the node to calculate and publish the robot's global position based on this. Thus, whenever data is received on the subsciber, the node should perform this integration:
 
@@ -183,7 +187,7 @@ As discussed briefly in the slides, ROS2 uses lots of custom message types. You'
             )
 ```
 ##### Pose
-Rotations and positions are by default 3d in ROS. For convenience, you can use Rotation2d and Point2d types instead, but when you publish them, you'll need to use our .to_ros() helper function to covert them to 3d.
+Rotations and positions are by default 3d in ROS. For convenience, you can use Rotation2d and Point2d types instead, but when you publish them, you'll need to covert them to 3d. To do this, ARV has '.to_ros()' helper functions, which are included in this repo. Because you won't have access to that on the mbot, do yourself a favor and do the conversions yourself, or at least look at how the ARV helpers work for each type.
 
 ##### Time
 You will need to look this one up. Two things to note: 
@@ -193,7 +197,7 @@ You will need to look this one up. Two things to note:
 ##### Covariance
 Don't worry too much about this. Covariance is basically a matrix used to represent uncertainty in a pose. For this purpose, our uncertainty is very small (but it must be nonzero), and we only need to set values for x and y axes and the z rotation, which are on the main diagonal of the matrix.
 
-## 11. Broadcasting TF
+## 10. Broadcasting TF
 
 ROS's Transform, or TF2 (https://docs.ros.org/en/lyrical/Concepts/Intermediate/About-Tf2.html), library is used to translate between different frames of reference. 
 
@@ -217,11 +221,11 @@ In terms of how this code is actually used, RViz's RobotModel display and the Od
 #### Transform
 The Transform class takes types that don't necessarily match the types we use in the rest of the node. Make sure you give your input in the right format (it may help to declare these objects in the 'Transform()' declaration itself)
 
-## 12. The Reset Service
+## 11. The Reset Service
 
 Add a service of type `std_srvs/Trigger` that zeroes your position/heading estimate back to `(0, 0, 0)`. This lets other ROS nodes request that the odometry node zero itself. 
 
-We're not giving you starter code for this. Go look at the slides, or better yet, the ROS2 docs or an online tutorial on services, to see if you can figure it out for yourself. Working together is also encouraged.
+You don't get starter code for this. Go look at the slides, or better yet, the ROS2 docs or an online tutorial on services, to see if you can figure it out for yourself. Working together is also encouraged.
 
 Some things to keep in mind while researching and referencing the slides:
 - Where does the 'std_srvs/Trigger' type need to be imported from?
@@ -234,7 +238,7 @@ A common error to watch out for: Zeroing doesn't automatically publish the new s
 
 
 
-## 13. Running With Encoder Simulation
+## 12. Running With Encoder Simulation
 
 To run the simplified nav stack, you need to launch three separate packages. Launching `core.launch.py` brings up (starts) the core robot functionality, `localization.launch.py` starts the node you just made, and `simulation.launch.py` starts the demo encoder simulation that publishes to the 'enc_vel/raw' topic:
 
@@ -250,7 +254,10 @@ ros2 launch bringup simulation.launch.py
 
 `enc_vel_mock_publisher` publishes the encoder data for a repeating square with a small constant drift bias and noise (see its README for config details). If your node traces a mostly complete square that goes back to roughly the starting point, it's probably working. The square won't be perfect because of the aforementioned noise.
 
-## 14. Running With the Rosbag
+### ROB 330 Note:
+Again, this step pertains to the ARV environment. The 'launch' commands will look pretty much the same, but you'll have to use 'build' and 'source install/' like you did in the mbot setup instructions: https://um-rob330.github.io/f26/resources/mbot-system-setup-pi5/#setup-mbot_ws, but not the 'apt update', 'rosdep install', and 'echo' lines. 
+
+## 13. Running With the Rosbag (Coming soon, hopefully)
 
 `bags/` contains a recorded rosbag of a heart-shaped trajectory on Maverick (the actual robot, not the simulation, so it also has noise). Launch the robot stack like you did in (§13), but instead of launching the simulation package, use the following ROS command to replay the previously recorded ROS bag.
 
@@ -260,7 +267,7 @@ ros2 bag play bags/<heart-bag-name>
 
 Replaying ROS bags is a valuable tool for us, because it allows us to test our algorithms and visualization tools against known sets of input that either replay or closely replicate actual robot conditions. If we know that the ROS bag represents driving in a heart, and your node doesn't show that, we can tell it needs to be debugged or tuned.
 
-## 15. Visualizing in RViz2
+## 14. Visualizing in RViz2
 
 RViz is a useful tool for quickly visualizing different localization-related data topics in Maverick's stack. Rather than echoing a topic and reading the output, RViz lets us see things like CV output, intended path, and for our purposes, odometry in a simulated space.
 To launch RViz, open a new terminal (do you have enough yet?) and run the following command:
@@ -270,31 +277,3 @@ rviz2
 ```
 If you have a certain set of topics you regularly want to look at togehter, you can save them as a custom configuration. For this project, use RViz's **File → Open Config** and select `src/bringup/rviz/onboarding.rviz` in the onboarding repo, which sets the fixed frame to `odom` and has RobotModel, TF, and Odometry displays already added.
 
-
-## 16. Formatting & Linting
-We also have some formatting commands to make sure your packages match our preferred organization style:
-
-```
-just format   # auto-formats all source files
-just lint     # runs the same checks CI (Continuous Integration) runs
-```
-#### *Run both before proceeding.* 
-
-## 17. Opening Your PR
-
-Commit your changes, and push to and publish your branch. Open it in Github, and open a Pull Request against `main` to submit your changes. The PR template will ask for:
-
-- A screenshot of RViz showing a valid trajectory against the mock publisher (square)
-- A screenshot of RViz showing a valid trajectory against the rosbag (heart)
-
-CI (Continuous Integration checks) must pass (build + test + lint) before your PR is considered complete.
-
-If it's approved, congratulations! You're done with onboarding. If not, see if you can find the error, and if you can't ask the leads.
-
-Whatever you do, **do not merge your pull request to main.** Keep main clean for everyone else!
-
-If you have any further questions about Git, ask the leads, your peers, or look it up yourself.
-
-https://www.kern-it.be/en/definitions/pull-request/
-
-https://docs.github.com/en/pull-requests/reference/pull-requests
