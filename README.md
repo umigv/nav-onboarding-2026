@@ -52,7 +52,10 @@ If you scroll to the top of this Github page, you'll see a green button with the
 - Open the folder in VSCode or an IDE of your choice.
 
 ## 4. Environment Setup
-Now that you have the repo open in your IDE, open a terminal window in the repo.
+Visit the following repo and follow its setup instructions:
+https://github.com/umigv/nav-onboarding-2026.git
+
+Now, open the nav-onboarding-26 repo in your IDE, and open a terminal window in the repo. Run the following commands:
 
 ```
 cd ~/<replace with your file path>/nav-onboarding-2026
