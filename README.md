@@ -53,7 +53,7 @@ If you scroll to the top of this Github page, you'll see a green button with the
 
 ## 4. Environment Setup
 Visit the following repo and follow its setup instructions:
-https://github.com/umigv/nav-onboarding-2026.git
+https://github.com/umigv/nav-environment
 
 Now, open the nav-onboarding-26 repo in your IDE, and open a terminal window in the repo. Run the following commands:
 
