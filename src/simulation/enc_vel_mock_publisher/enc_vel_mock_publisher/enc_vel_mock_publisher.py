@@ -7,6 +7,7 @@ import utils.lifecycle
 from geometry_msgs.msg import Twist, TwistWithCovariance, TwistWithCovarianceStamped, Vector3
 from rclpy.node import Node
 from std_msgs.msg import Header
+from std_srvs.srv import Trigger
 
 from .enc_vel_mock_publisher_config import EncVelMockPublisherConfig
 
@@ -25,6 +26,7 @@ class EncVelMockPublisher(Node):
         self.config: EncVelMockPublisherConfig = utils.config.load(self, EncVelMockPublisherConfig)
 
         self.enc_vel_publisher = self.create_publisher(TwistWithCovarianceStamped, "enc_vel", 10)
+        self.reset_srv = self.create_service(Trigger, "reset", self.reset_callback)
 
         self.phases: list[Phase] = self.build_phases()
         self.phase_index = 0
@@ -44,6 +46,11 @@ class EncVelMockPublisher(Node):
             angular_vel_radps=self.config.angular_speed_radps,
         )
         return [straight, turn]
+
+    def reset_callback(self, request: Trigger.Request, response: Trigger.Response) -> Trigger.Response:
+        response.success = True
+        response.message = "Reset successful"
+        return response
 
     def publish_enc_vel(self) -> None:
         phase = self.phases[self.phase_index]
