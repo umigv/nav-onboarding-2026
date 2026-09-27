@@ -1,12 +1,11 @@
 # enc_odom_publisher
-TODO: One or two sentences on what the node does and how it fits into the system.
-
-<!-- Fill in the sections below and delete the ones that don't apply. Config parameters are documented in
-enc_odom_publisher_config.py, not here. Other sections used across the repo: Services, Service Clients, Read Files,
-Written Files, TF Broadcasts. Free-form sections explaining behavior/algorithms go above the I/O sections. -->
+Uses the midpoint method to produce odometry. Publishes an Odometry message and broadcasts the odom -> base_link TF transform.
 
 ## Subscribed Topics
-- `topic` (`pkg/Msg`) - Description
+- `enc_vel` (`geometry_msgs/TwistWithCovarianceStamped`) - Simulated encoder velocity
 
 ## Published Topics
-- `topic` (`pkg/Msg`) - Description
+- `odom` (`nav_msgs/Odometry`) - Robot odometry
+
+## TF Broadcasts
+- `odom -> base_link` - Derived from `odom_frame_id` and `base_frame_id` config

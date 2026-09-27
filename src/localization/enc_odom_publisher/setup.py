@@ -15,7 +15,7 @@ setup(
     zip_safe=True,
     maintainer="Sophia",
     maintainer_email="sophiawa@umich.edu",
-    description="TODO: Package description",
+    description="Publishes odometry and broadcasts tf2",
     license="Apache-2.0",
     extras_require={"test": ["pytest"]},
     entry_points={

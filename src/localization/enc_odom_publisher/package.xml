@@ -3,7 +3,7 @@
 <package format="3">
   <name>enc_odom_publisher</name>
   <version>0.1.0</version>
-  <description>TODO: Package description</description>
+  <description>Publishes odometry and broadcasts tf2</description>
   <maintainer email="sophiawa@umich.edu">Sophia</maintainer>
   <license>Apache-2.0</license>
 
