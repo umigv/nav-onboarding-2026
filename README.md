@@ -11,6 +11,14 @@ You are expected to struggle with this project (not too much, we aren't sadists)
 ### Slides for Reference:
 https://docs.google.com/presentation/d/1YotOXd3rLx2toDDOaaBbGKjUl41JcExxPfoqDW98pH8/edit?slide=id.g3f689144427_0_119#slide=id.g3f689144427_0_119
 
+
+### ROS2 Examples:
+https://docs.ros.org/en/foxy/Tutorials/Beginner-Client-Libraries/Writing-A-Simple-Py-Publisher-And-Subscriber.html
+
+https://docs.ros.org/en/foxy/Tutorials/Beginner-Client-Libraries/Writing-A-Simple-Py-Service-And-Client.html
+
+
+
 ## 1. What is Odometry?
 
 Every mobile robot needs to know its location. Your job is to write to calculate odometry, or estimated position based on encoder data, for Maverick. Each motor has an encoder that tracks its rotation, and from this data, we can calculate Maverick's current velocity vector. These velocity data can be integrated over time to get an estimate of Maverick's current position. In order to take input from the motor encoders, calculate the odometry, and send it to the navigation algorithms, we use a ROS node.
@@ -52,7 +60,10 @@ If you scroll to the top of this Github page, you'll see a green button with the
 - Open the folder in VSCode or an IDE of your choice.
 
 ## 4. Environment Setup
-Now that you have the repo open in your IDE, open a terminal window in the repo.
+Visit the following repo and follow its setup instructions:
+https://github.com/umigv/nav-environment
+
+Now, open the nav-onboarding-26 repo in your IDE, and open a terminal window in the repo. Run the following commands:
 
 ```
 cd ~/<replace with your file path>/nav-onboarding-2026
