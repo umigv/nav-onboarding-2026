@@ -2,12 +2,12 @@ import math as m
 
 import utils.config
 import utils.lifecycle
+from builtin_interfaces.msg import Time as TimeMsg
 from geometry_msgs.msg import (
     Point,
     Pose,
     PoseWithCovariance,
     Quaternion,
-    Transform,
     TransformStamped,
     Twist,
     TwistWithCovariance,
@@ -18,6 +18,7 @@ from nav_msgs.msg import Odometry
 from rclpy.node import Node
 from rclpy.time import Time
 from std_msgs.msg import Header
+from std_srvs.srv import Trigger
 from tf2_ros import TransformBroadcaster
 
 from .enc_odom_publisher_config import EncOdomPublisherConfig
@@ -41,6 +42,11 @@ class EncOdomPublisher(Node):
         self.create_subscription(TwistWithCovarianceStamped, "enc_vel", self.enc_vel_callback, 10)
         self.odom_publisher = self.create_publisher(Odometry, "odom", 10)
         self.tf_broadcaster = TransformBroadcaster(self)
+        self.reset_service = self.create_service(
+            Trigger,
+            "reset_odometry",
+            self.reset_callback,
+        )
 
     def enc_vel_callback(self, msg: TwistWithCovarianceStamped) -> None:
         if msg.header.frame_id != self.config.base_frame_id:
@@ -49,6 +55,7 @@ class EncOdomPublisher(Node):
         cur_time = Time.from_msg(msg.header.stamp)
         if self.prev_time is None:
             self.prev_time = cur_time
+            return
 
         dt = (cur_time - self.prev_time).nanoseconds / 1e9
 
@@ -66,7 +73,7 @@ class EncOdomPublisher(Node):
         self.y += vx * dt * m.sin(mid_heading)
         self.heading += wz * dt
 
-        now = self.get_clock().now().to_msg()
+        now = msg.header.stamp
         q = Quaternion(  # Tells ROS which way the robot is facing
             x=0.0,
             y=0.0,
@@ -104,19 +111,46 @@ class EncOdomPublisher(Node):
         )
 
         self.odom_publisher.publish(odom)
-        self.tf_broadcaster.sendTransform(
-            TransformStamped(
-                header=Header(
-                    stamp=now,
-                    frame_id=self.config.odom_frame_id,
-                ),
-                child_frame_id=self.config.base_frame_id,
-                transform=Transform(
-                    translation=Vector3(x=self.x, y=self.y, z=0.0),
-                    rotation=q,
-                ),
-            )
-        )
+        self.publish_transform(now)
+
+    def reset_callback(self, request: Trigger.Request, response: Trigger.Response) -> Trigger.Response:
+        # x = 0
+        # y = 0
+        # heading = 0
+        self.x = 0.0
+        self.y = 0.0
+        self.heading = 0.0
+        self.prev_time = None
+        now = self.get_clock().now().to_msg()
+        # immediately update TF
+        self.publish_transform(now)
+
+        # fill response
+        response.success = True
+        response.message = "Odometry reset"
+        return response
+
+    def publish_transform(self, now: TimeMsg) -> None:
+        # construct TransformStamped
+        transform = TransformStamped()
+
+        transform.header.stamp = now
+        transform.header.frame_id = self.config.odom_frame_id
+        transform.child_frame_id = self.config.base_frame_id
+
+        # Translation: robot's x/y position
+        transform.transform.translation.x = self.x
+        transform.transform.translation.y = self.y
+        transform.transform.translation.z = 0.0
+
+        # Rotation: heading (yaw) -> quaternion
+        transform.transform.rotation.x = 0.0
+        transform.transform.rotation.y = 0.0
+        transform.transform.rotation.z = m.sin(self.heading / 2.0)
+        transform.transform.rotation.w = m.cos(self.heading / 2.0)
+
+        # send transform
+        self.tf_broadcaster.sendTransform(transform)
 
 
 def main() -> None:
