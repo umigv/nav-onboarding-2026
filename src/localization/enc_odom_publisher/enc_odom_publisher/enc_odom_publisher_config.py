@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True)  # frozen = true means you aren't supposed to change these fields later.
 class EncOdomPublisherConfig:
     """Config for EncOdomPublisher. See utils.config for supported field types and the YAML parameter mapping.
 
