@@ -16,6 +16,7 @@ from geometry_msgs.msg import (
 from nav_msgs.msg import Odometry
 from rclpy.node import Node
 from std_msgs.msg import Header
+from std_srvs.srv import Trigger
 from tf2_ros.transform_broadcaster import TransformBroadcaster
 from utils.geometry import Point2d, Rotation2d
 
@@ -32,6 +33,7 @@ class EncOdomPublisher(Node):
         self.pose_covariance = [0] * 36
         self.publisher = self.create_publisher(Odometry, "odom", 10)
         self._last_env_vel_message_time: datetime | None = None
+        self.create_service(Trigger, "reset", self.from_reset_callback)
         self._heading: float = 0
         self._x: float = 0
         self._y: float = 0
@@ -79,6 +81,13 @@ class EncOdomPublisher(Node):
                 ),
             )
         )
+
+    def from_reset_callback(self, request: Trigger.Request, response: Trigger.Response) -> Trigger.Response:
+        self._x, self._y, self._heading = (0, 0, 0)
+        self.time = self.get_clock().now().to_msg()
+        self.publish_odom()
+        response.success = True
+        return response
 
 
 def main() -> None:
