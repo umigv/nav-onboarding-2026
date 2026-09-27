@@ -28,15 +28,17 @@ class EncOdomPublisher(Node):
         super().__init__("enc_odom_publisher")
 
         self.config: EncOdomPublisherConfig = utils.config.load(self, EncOdomPublisherConfig)
-        self.create_subscription(TwistWithCovarianceStamped, "enc_vel", self.enc_vel_callback, 10)
         self.tf_broadcaster = TransformBroadcaster(self)
-        self.pose_covariance = [0] * 36
         self.publisher = self.create_publisher(Odometry, "odom", 10)
-        self._last_env_vel_message_time: Time | None = None
+        self.create_subscription(TwistWithCovarianceStamped, "enc_vel", self.enc_vel_callback, 10)
         self.create_service(Trigger, "reset", self.from_reset_callback)
+
+        self._last_env_vel_message_time: Time | None = None
         self.heading: float = 0
         self.x: float = 0
         self.y: float = 0
+
+        self.pose_covariance = [0] * 36
 
     def enc_vel_callback(self, msg: TwistWithCovarianceStamped) -> None:
         msg_time = Time.from_msg(msg.header.stamp)
@@ -44,14 +46,17 @@ class EncOdomPublisher(Node):
             dt = (msg_time - self._last_env_vel_message_time).nanoseconds / 1e9  # s
             if dt > 1 or dt <= 0:
                 return
+
             self.wz = msg.twist.twist.angular.z  # radians/s
             self.vx = msg.twist.twist.linear.x  # m/s
             mid_heading = self.heading + 0.5 * self.wz * dt  # midpoint method, more accurate than basic Euler's Method
             self.x += self.vx * dt * math.cos(mid_heading)
             self.y += self.vx * dt * math.sin(mid_heading)
             self.heading += self.wz * dt
+
             self.publish_odom(msg_time)
             self.publish_transform(msg_time)
+
         self._last_env_vel_message_time = msg_time
 
     def publish_odom(self, time: Time) -> None:
