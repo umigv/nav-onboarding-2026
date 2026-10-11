@@ -8,7 +8,14 @@
             "source.fixAll.ruff": "always",
             "source.organizeImports.ruff": "always"
         }
-    },
+    }, "python.analysis.autoImportCompletions": true,
+    "python.analysis.packageIndexDepths": [
+        {
+            "name": "",
+            "depth": 3,
+            "includeAllSymbols": true
+        }
+    ],
     "[markdown]": {
         "editor.wordWrap": "on",
         "editor.rulers": []
