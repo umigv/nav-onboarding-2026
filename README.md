@@ -174,15 +174,35 @@ The `enc_vel` subscription gives you linear velocity `vx` and angular velocity `
 
 ```
 dt = time since last enc_vel message
-mid_heading = heading + 0.5 * wz * dt      # midpoint method, more accurate than basic Euler's Method
-x += vx * dt * cos(mid_heading)
-y += vx * dt * sin(mid_heading)
-heading += wz * dt
+arc_length = v * dt
+d_theta = wz * dt
+mid_heading = heading + 0.5 * d_theta      # midpoint method, more accurate than basic Euler's Method
+chord_length = arc_length * sinc(d_theta / (2 * pi))
+position += chord_length in direction of mid_heading
+heading += d_theta
 ```
 ...and then publish the transformed output. However, there are some situations where we don't want to publish. For starters, drop the message (i.e. don't calculate or publish odometry updates) when the subscriber's received 'dt' is less than or equal to 0 or is longer than say, one second (as would happen if comms were lost). It's also good practice to check that each message's `frame_id` matches the `base_frame_id` from the config file. You also need to think back to the slides to decide when to publish your data. There are two main ways of doing this, one simpler to implement but provides less robust communication, and the other more complicated but more like what we do on the main robot.
 
 *Why midpoint method?*
-By using the midpoint of the initial and final headings of each timestep in our calculations, we can get a more reliable estimate of the direction the robot moved over the last timestep, especially while turning. `utils.geometry`'s `Point2d`/`Rotation2d` can be used to convert rotation and positions without you needing to worry about the trigonometry, but it is importnt to understand the mechanics of odometry.
+By using the midpoint of the initial and final headings of each timestep in our calculations, we can get a more reliable estimate of the direction the robot moved over the last timestep, especially while turning. `utils.geometry`'s `Point2d`/`Rotation2d` can be used to convert rotation and positions without you needing to worry about the trigonometry, but it is importnt to understand the mechanics of odometry. Member functions, such as the rotate_by() function, may be very useful to you. 
+
+##### Chord Length
+Chord length is the distance between points at the beginning and end of an arc. We calculate the robot's xy position after each dt by pointing the chord length in the direction of the robot's heading. Our equation for chord length comes from calculating the radius of the arc our robot makes in time dt using r = arc_length / d_theta. We can then construct a triangle, where two sides are from the start and endpoints to the middle of the circle and the remaining side is the chord that connects the starting and ending points. Splitting that triangle into two right triangles (down the middle of the chord), the hypotenuse is the radius, and the opposite side is half the chord length. 
+$$
+c = 2r\sin\left(\frac{\Delta\theta}{2}\right)
+$$
+However to avoid an infinite calculated radius when d_theta = 0, we do some algebraic manipulation to use the sinc function instead. 
+$$
+c = 2r\sin\left(\frac{\Delta\theta}{2}\right)
+$$
+$$
+c = \frac{2s}{\Delta\theta}\sin\left(\frac{\Delta\theta}{2}\right)
+$$
+$$
+c = s\frac{\sin\left(\Delta\theta / 2\right)}{\Delta\theta / 2}
+$$
+We can then divide by pi to substitute in the sinc function to get the formula shown in the pseudocode above.
+
 
 #### A note on ROS2 types:
 As discussed briefly in the slides, ROS2 uses lots of custom message types. You'll be interacting with a couple of them in this step, including Twist and Time. The most complicated of these is the Odometry type. The template for it is below. For the rest of the message types, you are encouraged to look them up in the ROS2 documentation.
